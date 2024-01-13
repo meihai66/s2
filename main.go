@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
+
 	//"net/url"
+	"runtime"
+	"strings"
+	"sync/atomic"
+
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
-	"runtime"
-	"strings"
-	"sync/atomic"
 )
 
 var (
@@ -22,7 +25,8 @@ var (
 	Prefix     string
 	Challenge  string
 	Counter    int64
-	CounterMax      int64
+	CounterMax int64
+	wg         sync.WaitGroup
 )
 
 func init() {
@@ -56,17 +60,20 @@ func main() {
 	prv, _ := btcec.PrivKeyFromBytes(bytePrivyKey)
 	address = crypto.PubkeyToAddress(*prv.PubKey().ToECDSA())
 	for i := 0; i < runtime.NumCPU(); i++ {
+		wg.Add(1)
 		go func() {
 			for {
-				makeTx()
 				if Counter >= CounterMax {
+					defer wg.Done()
 					break
 				}
+				makeTx()
 			}
 		}()
 	}
+	wg.Wait()
+	fmt.Println("MINT END", Counter)
 	select {}
-
 }
 
 func sendTX(body string) {
