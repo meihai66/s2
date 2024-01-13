@@ -110,7 +110,7 @@ func sendTX(body string) {
 	bodyString := string(bodyText)
 	containsValidateSuccess := strings.Contains(bodyString, "validate success!")
 	if containsValidateSuccess {
-		fmt.Print("MINT成功")
+		fmt.Print("MINT OK")
 	} else {
 		fmt.Println(err)
 	}
