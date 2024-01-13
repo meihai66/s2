@@ -7,13 +7,13 @@ import (
 	"io"
 	"net/http"
 	//"net/url"
-	"runtime"
-	"strings"
-
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"runtime"
+	"strings"
+	"sync/atomic"
 )
 
 var (
@@ -21,6 +21,7 @@ var (
 	PrivateKey string
 	Prefix     string
 	Challenge  string
+	Counter    int64
 )
 
 func init() {
@@ -48,11 +49,13 @@ func main() {
 	}
 	prv, _ := btcec.PrivKeyFromBytes(bytePrivyKey)
 	address = crypto.PubkeyToAddress(*prv.PubKey().ToECDSA())
-
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
 			for {
 				makeTx()
+				if Counter >= 4000 {
+					break
+				}
 			}
 		}()
 	}
@@ -75,7 +78,7 @@ func sendTX(body string) {
 	//	Proxy: http.ProxyURL(proxyURL),
 	//}
 	client := &http.Client{
-	//	Transport: transport,
+		//	Transport: transport,
 	}
 
 	var data = strings.NewReader(body)
@@ -110,7 +113,8 @@ func sendTX(body string) {
 	bodyString := string(bodyText)
 	containsValidateSuccess := strings.Contains(bodyString, "validate success!")
 	if containsValidateSuccess {
-		fmt.Print("MINT OK")
+		atomic.AddInt64(&Counter, 1)
+		fmt.Print("MINT OK ", Counter)
 	} else {
 		fmt.Println(err)
 	}
