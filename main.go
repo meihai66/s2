@@ -26,7 +26,7 @@ var (
 func init() {
 	Challenge = "72424e4200000000000000000000000000000000000000000000000000000000"
 
-	fmt.Print("请输入私钥：")
+	fmt.Print("PrivateKey：")
 	_, err := fmt.Scanln(&PrivateKey)
 	if err != nil {
 		return
@@ -34,7 +34,7 @@ func init() {
 	if len(PrivateKey) == 64 {
 		PrivateKey = "0x" + PrivateKey
 	}
-	fmt.Print("请输入难度：")
+	fmt.Print("Difficulty：")
 	_, err = fmt.Scanln(&Prefix)
 	if err != nil {
 		return
@@ -62,20 +62,20 @@ func main() {
 
 func sendTX(body string) {
 	// 设置代理地址
-	proxyAddress := "http://127.0.0.1:10900"
+	//proxyAddress := "http://127.0.0.1:10900"
 
 	// 创建一个使用代理的Transport
-	proxyURL, err := url.Parse(proxyAddress)
-	if err != nil {
-		fmt.Println("解析代理地址出错:", err)
-		return
-	}
+	//proxyURL, err := url.Parse(proxyAddress)
+	//if err != nil {
+	//	fmt.Println("解析代理地址出错:", err)
+	//	return
+	//}
 	// 创建一个使用代理的Transport
-	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
-	}
+	//transport := &http.Transport{
+	//	Proxy: http.ProxyURL(proxyURL),
+	//}
 	client := &http.Client{
-		Transport: transport,
+	//	Transport: transport,
 	}
 
 	var data = strings.NewReader(body)
