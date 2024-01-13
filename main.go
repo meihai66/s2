@@ -22,6 +22,7 @@ var (
 	Prefix     string
 	Challenge  string
 	Counter    int64
+	CounterMax      int64
 )
 
 func init() {
@@ -40,6 +41,11 @@ func init() {
 	if err != nil {
 		return
 	}
+	fmt.Print("CounterMax：")
+	_, err = fmt.Scanln(&CounterMax)
+	if err != nil {
+		return
+	}
 }
 
 func main() {
@@ -53,7 +59,7 @@ func main() {
 		go func() {
 			for {
 				makeTx()
-				if Counter >= 4000 {
+				if Counter >= CounterMax {
 					break
 				}
 			}
