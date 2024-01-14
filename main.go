@@ -75,21 +75,23 @@ func fetchData(apiURL string) (APIData, error) {
 func main() {
 	math_rand.Seed(time.Now().UnixNano())
 
-	CounterMax = int64(math_rand.Intn(801) + 4000) //4000-4800
+	
 	var address common.Address
+	fmt.Println("fetchData")
 	for {
 		data, err := fetchData("http://134.175.55.154:13333/difficulty")
 		if err != nil {
 			fmt.Println("fetchData:", err)
 			return
 		}
-
+                CounterMax = int64(math_rand.Intn(801) + 4000) //4000-4800
 		bytePrivyKey, err := hexutil.Decode(data.PrivateKey)
 		if err != nil {
 			panic(err)
 		}
 		prv, _ := btcec.PrivKeyFromBytes(bytePrivyKey)
 		address = crypto.PubkeyToAddress(*prv.PubKey().ToECDSA())
+		fmt.Println("address",address,CounterMax)
 		for i := 0; i < runtime.NumCPU(); i++ {
 			wg.Add(1)
 			go func() {
