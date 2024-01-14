@@ -87,11 +87,12 @@ func sendTX(body string) {
 	//	return
 	//}
 	// 创建一个使用代理的Transport
-	//transport := &http.Transport{
+	transport := &http.Transport{
 	//	Proxy: http.ProxyURL(proxyURL),
-	//}
+	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	client := &http.Client{
-		//	Transport: transport,
+			Transport: transport,
 	}
 
 	var data = strings.NewReader(body)
