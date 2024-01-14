@@ -156,7 +156,7 @@ func makeTx() {
 
 	if strings.HasPrefix(hashedSolution, Difficulty) {
 		//fmt.Println("Solution", hashedSolution)
-		body := fmt.Sprintf(`{"solution": "0x%s", "challenge": "0x%s", "address": "%s", "difficulty": "%s", "tick": "%s"}`, potentialSolution, Challenge, strings.ToLower(address.String()), Prefix, "rBNB")
+		body := fmt.Sprintf(`{"solution": "0x%s", "challenge": "0x%s", "address": "%s", "difficulty": "%s", "tick": "%s"}`, potentialSolution, Challenge, strings.ToLower(address.String()), Difficulty, "rBNB")
 		sendTX(body)
 	}
 }
