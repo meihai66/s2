@@ -23,7 +23,7 @@ import (
 var (
 	address    common.Address
 	PrivateKey string
-	Prefix     string
+	Difficulty     string
 	Challenge  string
 	Counter    int64
 	CounterMax int64
@@ -32,7 +32,9 @@ var (
 
 func init() {
 	Challenge = "72424e4200000000000000000000000000000000000000000000000000000000"
-
+	//Difficulty
+        Difficulty = "0x9999"
+	
 	fmt.Print("PrivateKey：")
 	_, err := fmt.Scanln(&PrivateKey)
 	if err != nil {
@@ -40,11 +42,6 @@ func init() {
 	}
 	if len(PrivateKey) == 64 {
 		PrivateKey = "0x" + PrivateKey
-	}
-	fmt.Print("Difficulty：")
-	_, err = fmt.Scanln(&Prefix)
-	if err != nil {
-		return
 	}
 	fmt.Print("CounterMax：")
 	_, err = fmt.Scanln(&CounterMax)
@@ -129,9 +126,9 @@ func sendTX(body string) {
 	containsValidateSuccess := strings.Contains(bodyString, "validate success!")
 	if containsValidateSuccess {
 		atomic.AddInt64(&Counter, 1)
-		fmt.Print("MINT OK ", Counter)
+		fmt.Println("MINT OK ", Counter)
 	} else {
-		fmt.Println(err)
+		//fmt.Println(err)
 	}
 
 }
@@ -157,8 +154,8 @@ func makeTx() {
 	hashedSolutionBytes := crypto.Keccak256(dataBytes)
 	hashedSolution := fmt.Sprintf("0x%s", hex.EncodeToString(hashedSolutionBytes))
 
-	if strings.HasPrefix(hashedSolution, Prefix) {
-		fmt.Println("Solution", hashedSolution)
+	if strings.HasPrefix(hashedSolution, Difficulty) {
+		//fmt.Println("Solution", hashedSolution)
 		body := fmt.Sprintf(`{"solution": "0x%s", "challenge": "0x%s", "address": "%s", "difficulty": "%s", "tick": "%s"}`, potentialSolution, Challenge, strings.ToLower(address.String()), Prefix, "rBNB")
 		sendTX(body)
 	}
