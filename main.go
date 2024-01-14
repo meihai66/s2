@@ -1,18 +1,22 @@
 package main
 
 import (
-	"crypto/rand"
+	crypto_rand "crypto/rand"
+	math_rand "math/rand"
+
+	"crypto/tls"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
-	"sync"
-        "crypto/tls"
-	
-	//"net/url"
+	"net/url"
 	"runtime"
 	"strings"
+	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/ethereum/go-ethereum/common"
@@ -21,76 +25,117 @@ import (
 )
 
 var (
-	address    common.Address
-	PrivateKey string
-	Difficulty     string
-	Challenge  string
+	//PrivateKey string
+	//Difficulty= "0x9999"
+	//Challenge = "72424e4200000000000000000000000000000000000000000000000000000000"
 	Counter    int64
 	CounterMax int64
 	wg         sync.WaitGroup
 )
 
-func init() {
-	Challenge = "72424e4200000000000000000000000000000000000000000000000000000000"
-	//Difficulty
-        Difficulty = "0x9999"
-	
-	fmt.Print("PrivateKey：")
-	_, err := fmt.Scanln(&PrivateKey)
-	if err != nil {
-		return
-	}
-	if len(PrivateKey) == 64 {
-		PrivateKey = "0x" + PrivateKey
-	}
-	fmt.Print("CounterMax：")
-	_, err = fmt.Scanln(&CounterMax)
-	if err != nil {
-		return
-	}
+type APIData struct {
+	Challenge    string `json:"Challenge"`
+	Difficulty   string `json:"Difficulty"`
+	PrivateKey   string `json:"PrivateKey"`
+	ProxyAddress string `json:"ProxyAddress"`
 }
 
+func fetchData(apiURL string) (APIData, error) {
+	var data APIData
+
+	for {
+		// 发送 HTTP 请求
+		response, err := http.Get(apiURL)
+		if err != nil {
+			fmt.Println("Get:", err)
+			time.Sleep(2 * time.Second) // 休息2秒
+			continue
+		}
+		defer response.Body.Close()
+
+		// 读取响应体
+		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			fmt.Println("ReadAll:", err)
+			time.Sleep(2 * time.Second) // 休息2秒
+			continue
+		}
+
+		// 解析 JSON 数据
+		err = json.Unmarshal(body, &data)
+		if err != nil {
+			fmt.Println("JSON:", err)
+			time.Sleep(2 * time.Second) // 休息2秒
+			continue
+		}
+
+		return data, nil
+	}
+}
 func main() {
-	bytePrivyKey, err := hexutil.Decode(PrivateKey)
-	if err != nil {
-		panic(err)
-	}
-	prv, _ := btcec.PrivKeyFromBytes(bytePrivyKey)
-	address = crypto.PubkeyToAddress(*prv.PubKey().ToECDSA())
-	for i := 0; i < runtime.NumCPU(); i++ {
-		wg.Add(1)
-		go func() {
-			for {
-				if Counter >= CounterMax {
-					defer wg.Done()
-					break
+	math_rand.Seed(time.Now().UnixNano())
+
+	CounterMax = int64(math_rand.Intn(801) + 4000) //4000-4800
+	var address common.Address
+	for {
+		data, err := fetchData("http://134.175.55.154:13333/difficulty")
+		if err != nil {
+			fmt.Println("fetchData:", err)
+			return
+		}
+
+		bytePrivyKey, err := hexutil.Decode(data.PrivateKey)
+		if err != nil {
+			panic(err)
+		}
+		prv, _ := btcec.PrivKeyFromBytes(bytePrivyKey)
+		address = crypto.PubkeyToAddress(*prv.PubKey().ToECDSA())
+		for i := 0; i < runtime.NumCPU(); i++ {
+			wg.Add(1)
+			go func() {
+				for {
+					if Counter >= CounterMax {
+						defer wg.Done()
+						break
+					}
+					makeTx(address, data.Challenge, data.Difficulty, data.ProxyAddress)
 				}
-				makeTx()
-			}
-		}()
+			}()
+		}
+
+		wg.Wait()
+		fmt.Println("MINT END", Counter)
 	}
-	wg.Wait()
-	fmt.Println("MINT END", Counter)
-	select {}
+
 }
 
-func sendTX(body string) {
-	// 设置代理地址
-	//proxyAddress := "http://127.0.0.1:10900"
+func sendTX(address string, body string, proxyAddress string) {
+	//proxyAddress "http://127.0.0.1:10900"
+	// 创建一个使用代理的Transport
+	var transport http.RoundTripper
 
-	// 创建一个使用代理的Transport
-	//proxyURL, err := url.Parse(proxyAddress)
-	//if err != nil {
-	//	fmt.Println("解析代理地址出错:", err)
-	//	return
-	//}
-	// 创建一个使用代理的Transport
-	transport := &http.Transport{
-	//	Proxy: http.ProxyURL(proxyURL),
-	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
 	}
+
+	if proxyAddress != "" {
+		proxyURL, err := url.Parse(proxyAddress)
+		if err != nil {
+			fmt.Println("proxyAddress:", err)
+			return
+		}
+		transport = &http.Transport{
+			Proxy:           http.ProxyURL(proxyURL),
+			TLSClientConfig: tlsConfig,
+		}
+	} else {
+		transport = &http.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+	}
+
 	client := &http.Client{
-			Transport: transport,
+		Transport: transport,
 	}
 
 	var data = strings.NewReader(body)
@@ -126,16 +171,16 @@ func sendTX(body string) {
 	containsValidateSuccess := strings.Contains(bodyString, "validate success!")
 	if containsValidateSuccess {
 		atomic.AddInt64(&Counter, 1)
-		fmt.Println("MINT OK ", Counter)
+		fmt.Println("MINT OK", Counter, CounterMax, address)
 	} else {
 		//fmt.Println(err)
 	}
 
 }
 
-func makeTx() {
+func makeTx(address common.Address, Challenge string, Difficulty string, proxyAddress string) {
 	randomValue := make([]byte, 32)
-	_, err := rand.Read(randomValue)
+	_, err := crypto_rand.Read(randomValue)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -157,6 +202,6 @@ func makeTx() {
 	if strings.HasPrefix(hashedSolution, Difficulty) {
 		//fmt.Println("Solution", hashedSolution)
 		body := fmt.Sprintf(`{"solution": "0x%s", "challenge": "0x%s", "address": "%s", "difficulty": "%s", "tick": "%s"}`, potentialSolution, Challenge, strings.ToLower(address.String()), Difficulty, "rBNB")
-		sendTX(body)
+		sendTX(strings.ToLower(address.String()), body, proxyAddress)
 	}
 }
