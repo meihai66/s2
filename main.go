@@ -7,7 +7,8 @@ import (
 	"io"
 	"net/http"
 	"sync"
-
+        "crypto/tls"
+	
 	//"net/url"
 	"runtime"
 	"strings"
