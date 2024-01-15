@@ -12,7 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"runtime"
+	//"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
