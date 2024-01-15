@@ -84,6 +84,7 @@ func main() {
 			fmt.Println("fetchData:", err)
 			return
 		}
+		Counter = 0
                 CounterMax = int64(math_rand.Intn(801) + 4000) //4000-4800
 		bytePrivyKey, err := hexutil.Decode(data.PrivateKey)
 		if err != nil {
