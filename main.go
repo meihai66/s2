@@ -93,7 +93,7 @@ func main() {
 		address = crypto.PubkeyToAddress(*prv.PubKey().ToECDSA())
 		fmt.Println("address",address,CounterMax)
 
-		for i := 0; i < runtime.NumCPU(); i++ {
+		for i := 0; i < 8; i++ {
 			wg.Add(1)
 			go func() {
 				for {
