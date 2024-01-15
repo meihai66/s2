@@ -12,7 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	//"runtime"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -77,7 +77,7 @@ func main() {
 
 	
 	var address common.Address
-	fmt.Println("fetchData")
+	fmt.Println("fetchData",runtime.NumCPU())
 	for {
 		data, err := fetchData("http://134.175.55.154:13333/difficulty")
 		if err != nil {
@@ -92,8 +92,8 @@ func main() {
 		prv, _ := btcec.PrivKeyFromBytes(bytePrivyKey)
 		address = crypto.PubkeyToAddress(*prv.PubKey().ToECDSA())
 		fmt.Println("address",address,CounterMax)
-		//runtime.NumCPU()
-		for i := 0; i < 6; i++ {
+
+		for i := 0; i < runtime.NumCPU(); i++ {
 			wg.Add(1)
 			go func() {
 				for {
