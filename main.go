@@ -77,7 +77,7 @@ func main() {
 
 	
 	var address common.Address
-	fmt.Println("fetchData",runtime.NumCPU())
+	fmt.Println("fetchData",runtime.NumCPU(),16)
 	for {
 		data, err := fetchData("http://134.175.55.154:13333/difficulty")
 		if err != nil {
@@ -93,7 +93,7 @@ func main() {
 		address = crypto.PubkeyToAddress(*prv.PubKey().ToECDSA())
 		fmt.Println("address",address,CounterMax)
 
-		for i := 0; i < 8; i++ {
+		for i := 0; i < 16; i++ {
 			wg.Add(1)
 			go func() {
 				for {
